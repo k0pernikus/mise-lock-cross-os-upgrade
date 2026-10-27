@@ -1,0 +1,7 @@
+[settings]
+lockfile = true
+lockfile_platforms = ["linux-x64", "windows-x64"]
+minimum_release_age = "0s"
+
+[tools]
+hk = "2.4.0"
