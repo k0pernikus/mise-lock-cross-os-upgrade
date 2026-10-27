@@ -1,4 +1,4 @@
-name: mise upgrade --bump on Windows, mise install on Linux
+name: mise install on Linux and Windows, mise upgrade --bump on Windows
 
 on:
   workflow_dispatch:
@@ -8,8 +8,8 @@ permissions:
   contents: read
 
 jobs:
-  linux-install-outdated:
-    name: "1. Linux: mise install the outdated hk from the committed lock"
+  linux-install-locked:
+    name: "1. Linux: mise install --locked (outdated hk, committed lock)"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
@@ -23,9 +23,26 @@ jobs:
       - name: installed hk version
         run: mise exec -- hk --version
 
+  windows-install-locked:
+    name: "2. Windows: mise install --locked (same committed lock)"
+    needs: linux-install-locked
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: jdx/mise-action@v5.2.4
+        with:
+          version: 2026.10.19
+          install: false
+          cache: false
+      - name: mise install --locked
+        run: mise install --locked
+      - name: installed hk version
+        run: mise exec -- hk --version
+
   windows-bump-and-install:
-    name: "2. Windows: mise upgrade --bump, then mise install"
-    needs: linux-install-outdated
+    name: "3. Windows: mise upgrade --bump, then mise install (no --locked)"
+    needs: windows-install-locked
+    if: ${{ !cancelled() }}
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7.0.1
@@ -38,8 +55,8 @@ jobs:
         run: mise upgrade --bump
       - name: diff of mise.toml and mise.lock against the committed lock
         run: git diff -- mise.toml mise.lock
-      - name: mise install --locked
-        run: mise install --locked
+      - name: mise install
+        run: mise install
       - name: installed hk version
         run: mise exec -- hk --version
       - uses: actions/upload-artifact@v7.0.2
@@ -50,7 +67,7 @@ jobs:
             mise.lock
 
   linux-install-windows-bumped-lock:
-    name: "3. Linux: mise install the lock that Windows bumped"
+    name: "4. Linux: mise install --locked with the lock Windows bumped"
     needs: windows-bump-and-install
     runs-on: ubuntu-latest
     steps:
@@ -68,9 +85,6 @@ jobs:
           cache: false
       - name: mise install --locked
         run: mise install --locked
-      - name: mise install
-        if: ${{ !cancelled() }}
-        run: mise install
       - name: installed hk version
         if: ${{ !cancelled() }}
         run: mise exec -- hk --version
