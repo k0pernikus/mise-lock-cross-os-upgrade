@@ -13,5 +13,5 @@ The workflow is one chain. Each job starts after the one above it. Job 3 runs ev
 |:---|:---|:---|
 | 1. Linux: mise install --locked (outdated hk, committed lock) | ubuntu-latest | `mise install --locked`, prints the hk version |
 | 2. Windows: mise install --locked (same committed lock) | windows-latest | `mise install --locked`, prints the hk version |
-| 3. Windows: mise upgrade --bump, then mise install (no --locked) | windows-latest | `mise upgrade --bump`, prints the diff, `mise install`, prints the hk version, uploads `mise.toml` and `mise.lock` |
+| 3. Windows: mise upgrade --bump, then mise install --locked | windows-latest | `mise upgrade --bump`, prints the diff, `mise install --locked`, prints the hk version, uploads `mise.toml` and `mise.lock` |
 | 4. Linux: mise install --locked with the lock Windows bumped | ubuntu-latest | `mise install --locked`, prints the hk version, fails if the install rewrote the files |

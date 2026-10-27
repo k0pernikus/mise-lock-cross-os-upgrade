@@ -40,7 +40,7 @@ jobs:
         run: mise exec -- hk --version
 
   windows-bump-and-install:
-    name: "3. Windows: mise upgrade --bump, then mise install (no --locked)"
+    name: "3. Windows: mise upgrade --bump, then mise install --locked"
     needs: windows-install-locked
     if: ${{ !cancelled() }}
     runs-on: windows-latest
@@ -55,10 +55,14 @@ jobs:
         run: mise upgrade --bump
       - name: diff of mise.toml and mise.lock against the committed lock
         run: git diff -- mise.toml mise.lock
-      - name: mise install
-        run: mise install
+      - name: mise install --locked
+        run: mise install --locked
       - name: installed hk version
         run: mise exec -- hk --version
+      - name: bumped mise.lock and its sha256
+        run: |
+          Get-Content mise.lock
+          (Get-FileHash mise.lock -Algorithm SHA256).Hash
       - uses: actions/upload-artifact@v7.0.2
         with:
           name: lock-bumped-on-windows
@@ -76,6 +80,10 @@ jobs:
         with:
           name: lock-bumped-on-windows
           path: .
+      - name: downloaded mise.lock and its sha256
+        run: |
+          cat mise.lock
+          sha256sum mise.lock
       - name: stage the Windows-bumped files as the baseline
         run: git add mise.toml mise.lock
       - uses: jdx/mise-action@v5.2.4
