@@ -1,4 +1,4 @@
-name: mise upgrade --bump on one OS, mise install on the other
+name: mise upgrade --bump on Windows, mise install on Linux
 
 on:
   workflow_dispatch:
@@ -23,8 +23,8 @@ jobs:
       - name: installed hk version
         run: mise exec -- hk --version
 
-  windows-bump:
-    name: "2a. Windows: mise upgrade --bump the committed lock"
+  windows-bump-and-install:
+    name: "2. Windows: mise upgrade --bump, then mise install"
     needs: linux-install-outdated
     runs-on: windows-latest
     steps:
@@ -38,6 +38,10 @@ jobs:
         run: mise upgrade --bump
       - name: diff of mise.toml and mise.lock against the committed lock
         run: git diff -- mise.toml mise.lock
+      - name: mise install --locked
+        run: mise install --locked
+      - name: installed hk version
+        run: mise exec -- hk --version
       - uses: actions/upload-artifact@v7.0.2
         with:
           name: lock-bumped-on-windows
@@ -46,8 +50,8 @@ jobs:
             mise.lock
 
   linux-install-windows-bumped-lock:
-    name: "3a. Linux: mise install the lock that Windows bumped"
-    needs: windows-bump
+    name: "3. Linux: mise install the lock that Windows bumped"
+    needs: windows-bump-and-install
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
@@ -56,57 +60,6 @@ jobs:
           name: lock-bumped-on-windows
           path: .
       - name: stage the Windows-bumped files as the baseline
-        run: git add mise.toml mise.lock
-      - uses: jdx/mise-action@v5.2.4
-        with:
-          version: 2026.10.19
-          install: false
-          cache: false
-      - name: mise install --locked
-        run: mise install --locked
-      - name: mise install
-        if: ${{ !cancelled() }}
-        run: mise install
-      - name: installed hk version
-        if: ${{ !cancelled() }}
-        run: mise exec -- hk --version
-      - name: mise.toml and mise.lock unchanged by mise install
-        if: ${{ !cancelled() }}
-        run: git diff --exit-code -- mise.toml mise.lock
-
-  linux-bump:
-    name: "2b. Linux: mise upgrade --bump the committed lock"
-    needs: linux-install-outdated
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7.0.1
-      - uses: jdx/mise-action@v5.2.4
-        with:
-          version: 2026.10.19
-          install: false
-          cache: false
-      - name: mise upgrade --bump
-        run: mise upgrade --bump
-      - name: diff of mise.toml and mise.lock against the committed lock
-        run: git diff -- mise.toml mise.lock
-      - uses: actions/upload-artifact@v7.0.2
-        with:
-          name: lock-bumped-on-linux
-          path: |
-            mise.toml
-            mise.lock
-
-  windows-install-linux-bumped-lock:
-    name: "3b. Windows: mise install the lock that Linux bumped"
-    needs: linux-bump
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v7.0.1
-      - uses: actions/download-artifact@v8.0.2
-        with:
-          name: lock-bumped-on-linux
-          path: .
-      - name: stage the Linux-bumped files as the baseline
         run: git add mise.toml mise.lock
       - uses: jdx/mise-action@v5.2.4
         with:
